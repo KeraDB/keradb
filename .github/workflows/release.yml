@@ -1,0 +1,215 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: NoSQLite ${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          body: |
+            ## NoSQLite ${{ steps.get_version.outputs.version }}
+            
+            ### Installation
+            
+            **Linux/macOS:**
+            ```bash
+            curl -sSf https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sh
+            ```
+            
+            **Windows (PowerShell):**
+            ```powershell
+            iwr -useb https://raw.githubusercontent.com/${{ github.repository }}/main/install.ps1 | iex
+            ```
+            
+            Or download the binary for your platform below.
+
+  build-linux:
+    name: Build for Linux
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Build
+        run: cargo build --release
+      
+      - name: Create archive
+        run: |
+          mkdir -p release
+          cp target/release/nosqlite release/
+          cp README.md LICENSE release/ || true
+          cd release
+          tar -czf ../nosqlite-${{ needs.create-release.outputs.version }}-linux-x86_64.tar.gz .
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./nosqlite-${{ needs.create-release.outputs.version }}-linux-x86_64.tar.gz
+          asset_name: nosqlite-${{ needs.create-release.outputs.version }}-linux-x86_64.tar.gz
+          asset_content_type: application/gzip
+
+  build-macos:
+    name: Build for macOS
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Build
+        run: cargo build --release
+      
+      - name: Create archive
+        run: |
+          mkdir -p release
+          cp target/release/nosqlite release/
+          cp README.md LICENSE release/ || true
+          cd release
+          tar -czf ../nosqlite-${{ needs.create-release.outputs.version }}-macos-x86_64.tar.gz .
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./nosqlite-${{ needs.create-release.outputs.version }}-macos-x86_64.tar.gz
+          asset_name: nosqlite-${{ needs.create-release.outputs.version }}-macos-x86_64.tar.gz
+          asset_content_type: application/gzip
+
+  build-windows:
+    name: Build for Windows
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Build
+        run: cargo build --release
+      
+      - name: Create standalone executable for WinGet
+        shell: pwsh
+        run: |
+          Copy-Item target\release\nosqlite.exe nosqlite-windows-x64.exe
+      
+      - name: Calculate SHA256 for WinGet
+        id: sha256
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash nosqlite-windows-x64.exe -Algorithm SHA256).Hash
+          echo "sha256=$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "SHA256 Hash for WinGet manifest: $hash"
+          Write-Host ""
+          Write-Host "Update winget/NoSQLite.NoSQLite.installer.yaml with this hash!"
+      
+      - name: Create archive
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release
+          Copy-Item target\release\nosqlite.exe release\
+          Copy-Item README.md release\ -ErrorAction SilentlyContinue
+          Copy-Item LICENSE release\ -ErrorAction SilentlyContinue
+          Copy-Item install.ps1 release\
+          Copy-Item install.bat release\
+          Compress-Archive -Path release\* -DestinationPath nosqlite-${{ needs.create-release.outputs.version }}-windows-x86_64.zip
+      
+      - name: Upload Standalone Executable (for WinGet)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./nosqlite-windows-x64.exe
+          asset_name: nosqlite-windows-x64.exe
+          asset_content_type: application/octet-stream
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./nosqlite-${{ needs.create-release.outputs.version }}-windows-x86_64.zip
+          asset_name: nosqlite-${{ needs.create-release.outputs.version }}-windows-x86_64.zip
+          asset_content_type: application/zip
