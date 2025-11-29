@@ -1,0 +1,49 @@
+# Rust
+/target
+**/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database files
+*.ndb
+*.wal
+*.idx
+
+# Build artifacts
+*.dll
+*.so
+*.dylib
+*.exe
+*.a
+*.lib
+
+# Node modules (for frontend/SDKs)
+**/node_modules/
+**/dist/
+**/.next/
+
+# Python
+**/__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+test_data/
+**/db1
+**/db2
+
+# Logs
+*.log
