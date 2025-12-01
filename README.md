@@ -113,18 +113,18 @@ let config = VectorConfig::new(768)
 
 **Linux and macOS:**
 ```bash
-curl -sSf https://raw.githubusercontent.com/yourusername/keradb/main/scripts/install.sh | sh
+curl -sSf https://raw.githubusercontent.com/KeraDB/keradb/main/scripts/install.sh | sh
 ```
 
 **Windows (PowerShell):**
 ```powershell
-iwr -useb https://raw.githubusercontent.com/yourusername/keradb/main/scripts/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/KeraDB/keradb/main/scripts/install.ps1 | iex
 ```
 
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/keradb.git
+git clone https://github.com/KeraDB/keradb.git
 cd keradb
 cargo build --release
 ```
