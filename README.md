@@ -346,4 +346,4 @@ Inspired by:
 
 ---
 
-**Built with Rust** | [Documentation](docs/getting-started.md) | [Examples](examples/)
+**Built with Rust** | [Documentation](https://keradb.github.io/docs) | [Examples](https://keradb.github.io/docs/examples)
