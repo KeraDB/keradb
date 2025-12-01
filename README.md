@@ -7,6 +7,11 @@
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 KeraDB is a single-file, embedded document database designed for simplicity and ease of use. Think SQLite, but for JSON documents **with vector search capabilities**!
+-- -- --
+
+[Documentation](https://keradb.github.io/docs) | [Examples](https://keradb.github.io/docs/examples)
+
+-- -- --
 
 ## Features
 
@@ -346,4 +351,4 @@ Inspired by:
 
 ---
 
-**Built with Rust** | [Documentation](https://keradb.github.io/docs) | [Examples](https://keradb.github.io/docs/examples)
+**Built in London & Texas with Rust and ❤️** | 
